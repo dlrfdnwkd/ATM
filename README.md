@@ -4,5 +4,8 @@ ATM API 토이 프로젝트입니다.
 ## 기술
 Spring Boot
 JPA
+H2
 MySQL
 Jenkins
+Lombok
+JUnit

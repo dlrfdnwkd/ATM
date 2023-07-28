@@ -7,6 +7,7 @@ import com.dlrfdnwkd.atm.exception.MemberException;
 import com.dlrfdnwkd.atm.service.MemberService;
 import com.google.gson.Gson;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,12 +20,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.awt.*;
-
 import static com.dlrfdnwkd.atm.constants.MemberConstants.USER_ID_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.lenient;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -60,7 +58,7 @@ public class MemberControllerTest {
         //when
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post(url)
-                        .content(gson.toJson(memberRequest("id","홍길동")))
+                        .content(gson.toJson(memberRequest("id","9512","홍길동")))
                         .contentType(MediaType.APPLICATION_JSON)
         );
 
@@ -77,7 +75,7 @@ public class MemberControllerTest {
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post(url)
                         .header(USER_ID_HEADER, "12345")
-                        .content(gson.toJson(memberRequest(null, "9512")))
+                        .content(gson.toJson(memberRequest(null, "9512","홍길동")))
                         .contentType(MediaType.APPLICATION_JSON)
         );
 
@@ -85,11 +83,13 @@ public class MemberControllerTest {
         resultActions.andExpect(status().isBadRequest());
     }
 
+    @DisplayName("멤버등록실패_MemberServicec에러")
     @Test
     public void 멤버등록실패_MemberService에서에러Throw() throws Exception {
         //given
         final String url = "/api/v1/members";
-        lenient().doThrow(new MemberException(MemberErrorResult.DUPLICATED_MEMBER_REGISTER))
+        memberService.addMember("id","9512","홍길동");
+        doThrow(new MemberException(MemberErrorResult.DUPLICATED_MEMBER_REGISTER))
                 .when(memberService)
                 .addMember("id","9512","홍길동");
 
@@ -97,18 +97,38 @@ public class MemberControllerTest {
         final ResultActions resultActions = mockMvc.perform(
                 MockMvcRequestBuilders.post(url)
                         .header(USER_ID_HEADER,"12345")
-                        .content(gson.toJson(memberRequest("id","9512")))
+                        .content(gson.toJson(memberRequest("id","9512","홍길동")))
                         .contentType(MediaType.APPLICATION_JSON)
         );
 
         //then
-        resultActions.andExpect(status().isBadRequest());
+        resultActions.andExpect(status().isBadRequest())
+                .andDo(MockMvcResultHandlers.print());
     }
 
-    private MemberRequest memberRequest(final String id, final String password) {
+    @DisplayName("멤버등록성공")
+    @Test
+    public void 멤버등록성공() throws Exception {
+        //given
+        final String url = "/api/v1/member";
+
+        //when
+        final ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.post(url)
+                        .header(USER_ID_HEADER,"12345")
+                        .content(gson.toJson(memberRequest("id","9512","홍길동")))
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andDo(MockMvcResultHandlers.print());
+    }
+
+    private MemberRequest memberRequest(final String id, final String password,final String name) {
         return MemberRequest.builder()
                 .id(id)
                 .password(password)
+                .name(name)
                 .build();
     }
 }
