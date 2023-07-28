@@ -10,6 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,9 +23,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.stream.Stream;
+
 import static com.dlrfdnwkd.atm.constants.MemberConstants.USER_ID_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -81,6 +87,32 @@ public class MemberControllerTest {
 
         //then
         resultActions.andExpect(status().isBadRequest());
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidMemberAddParameter")
+    public void 멤버등록실패_잘못된파라미터(final String id, final String password, final String name) throws Exception {
+        //given
+        final String url = "/api/v1/members";
+
+        //when
+        ResultActions resultActions = mockMvc.perform(
+                MockMvcRequestBuilders.post(url)
+                        .header(USER_ID_HEADER,"9512")
+                        .content(gson.toJson(memberRequest(id,password,name)))
+                        .contentType(MediaType.APPLICATION_JSON)
+        );
+
+        //then
+        resultActions.andExpect(status().isBadRequest());
+    }
+
+    private static Stream<Arguments> invalidMemberAddParameter() {
+        return Stream.of(
+                Arguments.of(null,"9512","홍길동"),
+                Arguments.of("","9512","홍길동"),
+                Arguments.of(" ","9512","홍길동")
+        );
     }
 
     @DisplayName("멤버등록실패_MemberServicec에러")
