@@ -2,6 +2,7 @@ package com.dlrfdnwkd.atm.controller;
 
 import com.dlrfdnwkd.atm.common.GlobalExceptionHandler;
 import com.dlrfdnwkd.atm.dto.MemberRequest;
+import com.dlrfdnwkd.atm.dto.MemberResponse;
 import com.dlrfdnwkd.atm.enums.MemberErrorResult;
 import com.dlrfdnwkd.atm.exception.MemberException;
 import com.dlrfdnwkd.atm.service.MemberService;
@@ -23,12 +24,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultHandlers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
 import static com.dlrfdnwkd.atm.constants.MemberConstants.USER_ID_HEADER;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -142,7 +143,12 @@ public class MemberControllerTest {
     @Test
     public void 멤버등록성공() throws Exception {
         //given
-        final String url = "/api/v1/member";
+        final String url = "/api/v1/members";
+        final MemberResponse memberResponse = MemberResponse.builder()
+                .id("id")
+                .name("홍길동").build();
+
+        doReturn(memberResponse).when(memberService).addMember("id","9512","홍길동");
 
         //when
         final ResultActions resultActions = mockMvc.perform(
@@ -153,7 +159,15 @@ public class MemberControllerTest {
         );
 
         //then
-        resultActions.andDo(MockMvcResultHandlers.print());
+        resultActions.andExpect(status().isCreated())
+                .andDo(MockMvcResultHandlers.print());
+
+        final MemberResponse response = gson.fromJson(resultActions.andReturn()
+                .getResponse()
+                .getContentAsString(StandardCharsets.UTF_8), MemberResponse.class);
+
+        assertThat(response.getId()).isNotNull();
+        assertThat(response.getName()).isEqualTo("홍길동");
     }
 
     private MemberRequest memberRequest(final String id, final String password,final String name) {

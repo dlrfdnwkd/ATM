@@ -25,9 +25,10 @@ public class MemberController {
             @RequestHeader(USER_ID_HEADER) final String userId,
             @RequestBody @Valid final MemberRequest memberRequest) {
 
-        memberService.addMember(memberRequest.getId(),memberRequest.getPassword(),memberRequest.getName());
+        final MemberResponse memberResponse = memberService.addMember(memberRequest.getId(),memberRequest.getPassword(),memberRequest.getName());
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(memberResponse);
     }
 
 }
